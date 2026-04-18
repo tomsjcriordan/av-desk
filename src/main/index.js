@@ -1,6 +1,16 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
+import {
+  getDb,
+  listExpenses,
+  addExpense,
+  updateExpense,
+  deleteExpense,
+  listClients,
+  upsertClient,
+  deleteClient,
+} from './db'
 
 const store = new Store()
 
@@ -32,6 +42,17 @@ function createWindow() {
 ipcMain.handle('settings:get', (_event, key) => store.get(key))
 ipcMain.handle('settings:set', (_event, key, value) => store.set(key, value))
 ipcMain.handle('settings:getAll', () => store.store)
+
+// IPC: Expenses
+ipcMain.handle('expenses:list', () => listExpenses(getDb(app.getPath.bind(app))))
+ipcMain.handle('expenses:add', (_event, data) => addExpense(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('expenses:update', (_event, id, data) => updateExpense(getDb(app.getPath.bind(app)), id, data))
+ipcMain.handle('expenses:delete', (_event, id) => deleteExpense(getDb(app.getPath.bind(app)), id))
+
+// IPC: Clients
+ipcMain.handle('clients:list', () => listClients(getDb(app.getPath.bind(app))))
+ipcMain.handle('clients:upsert', (_event, data) => upsertClient(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('clients:delete', (_event, id) => deleteClient(getDb(app.getPath.bind(app)), id))
 
 app.whenReady().then(createWindow)
 
