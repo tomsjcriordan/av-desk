@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
-@source "../../../src/renderer/src/**/*.{js,jsx}";
-@source "../../../src/renderer/index.html";
 
 * {
   box-sizing: border-box;
