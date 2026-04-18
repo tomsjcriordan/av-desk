@@ -1,34 +1,30 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Sidebar from './components/Sidebar'
+import Expenses from './screens/Expenses'
+import Invoices from './screens/Invoices'
+import AVAgent from './screens/AVAgent'
+import FileDistribution from './screens/FileDistribution'
+import ContentStudio from './screens/ContentStudio'
+import Settings from './screens/Settings'
+import { colors } from './theme'
 
-function App() {
-  const ipcHandle = () => window.electron.ipcRenderer.send('ping')
-
+export default function App() {
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
+    <HashRouter>
+      <div style={{ display: 'flex', height: '100vh', backgroundColor: colors.bg, overflow: 'hidden' }}>
+        <Sidebar />
+        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/expenses" replace />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/av-agent" element={<AVAgent />} />
+            <Route path="/file-distribution" element={<FileDistribution />} />
+            <Route path="/content/:account" element={<ContentStudio />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
       </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    </HashRouter>
   )
 }
-
-export default App
