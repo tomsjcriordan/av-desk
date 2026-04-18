@@ -36,6 +36,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete: (id) => ipcRenderer.invoke('rooms:delete', id),
     reset: (venueId) => ipcRenderer.invoke('rooms:reset', venueId),
   },
+  posts: {
+    list: (account) => ipcRenderer.invoke('posts:list', account),
+    add: (data) => ipcRenderer.invoke('posts:add', data),
+    delete: (id) => ipcRenderer.invoke('posts:delete', id),
+    stats: (account) => ipcRenderer.invoke('posts:stats', account),
+  },
+  suggestions: {
+    list: (account, status) => ipcRenderer.invoke('suggestions:list', account, status),
+    add: (data) => ipcRenderer.invoke('suggestions:add', data),
+    updateStatus: (id, status) => ipcRenderer.invoke('suggestions:updateStatus', id, status),
+  },
+  content: {
+    buildPrompt: (account, mode) => ipcRenderer.invoke('content:buildPrompt', account, mode),
+  },
   agent: {
     chat: (messages, systemPrompt) => ipcRenderer.invoke('agent:chat', messages, systemPrompt),
     selectImage: () => ipcRenderer.invoke('agent:selectImage'),

@@ -8,8 +8,11 @@ import {
   listInvoices, getNextInvoiceNumber, addInvoice, updateInvoice, deleteInvoice,
   listVenues, addVenue, deleteVenue,
   listRooms, addRoom, updateRoomStatus, deleteRoom, resetRooms,
+  addSuggestion, listSuggestions, updateSuggestionStatus,
+  addPost, listPosts, deletePost, getPostStats,
 } from './db'
 import { handleAgentChat, handleAgentSelectImage } from './agentHandlers'
+import { buildContentPrompt } from './contentPrompts'
 
 const store = new Store()
 
@@ -64,6 +67,32 @@ ipcMain.handle('rooms:reset', (_e, venueId) => resetRooms(getDb(app.getPath.bind
 // IPC: AV Agent
 ipcMain.handle('agent:chat', (_e, messages, systemPrompt) => handleAgentChat(messages, systemPrompt))
 ipcMain.handle('agent:selectImage', () => handleAgentSelectImage())
+
+// IPC: Content Posts
+ipcMain.handle('posts:list', (_e, account) => listPosts(getDb(app.getPath.bind(app)), account))
+ipcMain.handle('posts:add', (_e, data) => addPost(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('posts:delete', (_e, id) => deletePost(getDb(app.getPath.bind(app)), id))
+ipcMain.handle('posts:stats', (_e, account) => getPostStats(getDb(app.getPath.bind(app)), account))
+
+// IPC: Content Suggestions
+ipcMain.handle('suggestions:list', (_e, account, status) => listSuggestions(getDb(app.getPath.bind(app)), account, status))
+ipcMain.handle('suggestions:add', (_e, data) => addSuggestion(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('suggestions:updateStatus', (_e, id, status) => updateSuggestionStatus(getDb(app.getPath.bind(app)), id, status))
+
+// IPC: Content Prompt Builder
+ipcMain.handle('content:buildPrompt', (_e, account, mode) => {
+  const db = getDb(app.getPath.bind(app))
+  const stats = getPostStats(db, account)
+  const recentPosts = listPosts(db, account, 20)
+  const allSuggestions = listSuggestions(db, account)
+  const posted = allSuggestions.filter((s) => s.status === 'posted')
+  const suggestionStats = allSuggestions.length > 0 ? {
+    suggestionsPosted: posted.length,
+    suggestionsTotal: allSuggestions.length,
+    avgPostedViews: 0,
+  } : null
+  return buildContentPrompt(account, mode, stats, recentPosts, suggestionStats)
+})
 
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
