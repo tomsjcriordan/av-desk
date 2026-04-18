@@ -9,6 +9,8 @@ beforeEach(() => {
     clients: { list: vi.fn().mockResolvedValue([]) },
     invoices: { list: vi.fn().mockResolvedValue([]), nextNumber: vi.fn().mockResolvedValue('INV-001') },
     agent: { chat: vi.fn().mockResolvedValue({ text: '' }), selectImage: vi.fn().mockResolvedValue(null) },
+    venues: { list: vi.fn().mockResolvedValue([]) },
+    rooms: { list: vi.fn().mockResolvedValue([]) },
   }
 })
 

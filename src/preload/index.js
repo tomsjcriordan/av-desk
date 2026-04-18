@@ -24,6 +24,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (id, data) => ipcRenderer.invoke('invoices:update', id, data),
     delete: (id) => ipcRenderer.invoke('invoices:delete', id),
   },
+  venues: {
+    list: () => ipcRenderer.invoke('venues:list'),
+    add: (data) => ipcRenderer.invoke('venues:add', data),
+    delete: (id) => ipcRenderer.invoke('venues:delete', id),
+  },
+  rooms: {
+    list: (venueId) => ipcRenderer.invoke('rooms:list', venueId),
+    add: (data) => ipcRenderer.invoke('rooms:add', data),
+    updateStatus: (id, status) => ipcRenderer.invoke('rooms:updateStatus', id, status),
+    delete: (id) => ipcRenderer.invoke('rooms:delete', id),
+    reset: (venueId) => ipcRenderer.invoke('rooms:reset', venueId),
+  },
   agent: {
     chat: (messages) => ipcRenderer.invoke('agent:chat', messages),
     selectImage: () => ipcRenderer.invoke('agent:selectImage'),

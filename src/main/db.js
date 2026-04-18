@@ -37,7 +37,23 @@ export function initDb(db) {
       email    TEXT    DEFAULT '',
       notes    TEXT    DEFAULT ''
     );
+    CREATE TABLE IF NOT EXISTS venues (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT    NOT NULL,
+      notes      TEXT    DEFAULT '',
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS rooms (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      venue_id   INTEGER NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+      name       TEXT    NOT NULL,
+      ip_address TEXT    NOT NULL DEFAULT '',
+      share_path TEXT    DEFAULT '',
+      status     TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','delivered')),
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
   `)
+  db.pragma('foreign_keys = ON')
 }
 
 let _db = null
@@ -137,4 +153,48 @@ export function deleteInvoice(db, id) {
 export function getNextInvoiceNumber(db) {
   const { count } = db.prepare('SELECT COUNT(*) as count FROM invoices').get()
   return `INV-${String(count + 1).padStart(3, '0')}`
+}
+
+// ── Venues ──────────────────────────────────────────────────────────────────
+
+export function listVenues(db) {
+  return db.prepare('SELECT * FROM venues ORDER BY name ASC').all()
+}
+
+export function addVenue(db, { name, notes }) {
+  const { lastInsertRowid } = db.prepare(
+    'INSERT INTO venues (name, notes) VALUES (?, ?)'
+  ).run(name, notes ?? '')
+  return db.prepare('SELECT * FROM venues WHERE id = ?').get(lastInsertRowid)
+}
+
+export function deleteVenue(db, id) {
+  db.prepare('DELETE FROM rooms WHERE venue_id = ?').run(id)
+  db.prepare('DELETE FROM venues WHERE id = ?').run(id)
+}
+
+// ── Rooms ───────────────────────────────────────────────────────────────────
+
+export function listRooms(db, venueId) {
+  return db.prepare('SELECT * FROM rooms WHERE venue_id = ? ORDER BY name ASC').all(venueId)
+}
+
+export function addRoom(db, { venue_id, name, ip_address, share_path }) {
+  const { lastInsertRowid } = db.prepare(
+    'INSERT INTO rooms (venue_id, name, ip_address, share_path) VALUES (?, ?, ?, ?)'
+  ).run(venue_id, name, ip_address ?? '', share_path ?? '')
+  return db.prepare('SELECT * FROM rooms WHERE id = ?').get(lastInsertRowid)
+}
+
+export function updateRoomStatus(db, id, status) {
+  db.prepare('UPDATE rooms SET status = ? WHERE id = ?').run(status, id)
+  return db.prepare('SELECT * FROM rooms WHERE id = ?').get(id)
+}
+
+export function deleteRoom(db, id) {
+  db.prepare('DELETE FROM rooms WHERE id = ?').run(id)
+}
+
+export function resetRooms(db, venueId) {
+  db.prepare("UPDATE rooms SET status = 'pending' WHERE venue_id = ?").run(venueId)
 }

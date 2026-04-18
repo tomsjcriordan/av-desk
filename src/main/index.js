@@ -6,6 +6,8 @@ import {
   listExpenses, addExpense, updateExpense, deleteExpense,
   listClients, upsertClient, deleteClient,
   listInvoices, getNextInvoiceNumber, addInvoice, updateInvoice, deleteInvoice,
+  listVenues, addVenue, deleteVenue,
+  listRooms, addRoom, updateRoomStatus, deleteRoom, resetRooms,
 } from './db'
 import { handleAgentChat, handleAgentSelectImage } from './agentHandlers'
 
@@ -46,6 +48,18 @@ ipcMain.handle('invoices:nextNumber', () => getNextInvoiceNumber(getDb(app.getPa
 ipcMain.handle('invoices:add', (_e, data) => addInvoice(getDb(app.getPath.bind(app)), data))
 ipcMain.handle('invoices:update', (_e, id, data) => updateInvoice(getDb(app.getPath.bind(app)), id, data))
 ipcMain.handle('invoices:delete', (_e, id) => deleteInvoice(getDb(app.getPath.bind(app)), id))
+
+// IPC: Venues
+ipcMain.handle('venues:list', () => listVenues(getDb(app.getPath.bind(app))))
+ipcMain.handle('venues:add', (_e, data) => addVenue(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('venues:delete', (_e, id) => deleteVenue(getDb(app.getPath.bind(app)), id))
+
+// IPC: Rooms
+ipcMain.handle('rooms:list', (_e, venueId) => listRooms(getDb(app.getPath.bind(app)), venueId))
+ipcMain.handle('rooms:add', (_e, data) => addRoom(getDb(app.getPath.bind(app)), data))
+ipcMain.handle('rooms:updateStatus', (_e, id, status) => updateRoomStatus(getDb(app.getPath.bind(app)), id, status))
+ipcMain.handle('rooms:delete', (_e, id) => deleteRoom(getDb(app.getPath.bind(app)), id))
+ipcMain.handle('rooms:reset', (_e, venueId) => resetRooms(getDb(app.getPath.bind(app)), venueId))
 
 // IPC: AV Agent
 ipcMain.handle('agent:chat', (_e, messages) => handleAgentChat(messages))
