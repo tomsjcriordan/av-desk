@@ -62,7 +62,7 @@ ipcMain.handle('rooms:delete', (_e, id) => deleteRoom(getDb(app.getPath.bind(app
 ipcMain.handle('rooms:reset', (_e, venueId) => resetRooms(getDb(app.getPath.bind(app)), venueId))
 
 // IPC: AV Agent
-ipcMain.handle('agent:chat', (_e, messages) => handleAgentChat(messages))
+ipcMain.handle('agent:chat', (_e, messages, systemPrompt) => handleAgentChat(messages, systemPrompt))
 ipcMain.handle('agent:selectImage', () => handleAgentSelectImage())
 
 app.whenReady().then(createWindow)

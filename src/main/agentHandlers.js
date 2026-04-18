@@ -42,7 +42,7 @@ function buildApiMessages(messages) {
   })
 }
 
-export async function handleAgentChat(messages) {
+export async function handleAgentChat(messages, systemPrompt) {
   const store = new Store()
   const apiKey = store.get('claudeApiKey')
   if (!apiKey) throw new Error('Claude API key not set. Add it in Settings.')
@@ -51,7 +51,7 @@ export async function handleAgentChat(messages) {
   const response = await client.messages.create({
     model: 'claude-opus-4-6',
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt || SYSTEM_PROMPT,
     messages: buildApiMessages(messages),
   })
 

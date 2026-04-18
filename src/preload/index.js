@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     reset: (venueId) => ipcRenderer.invoke('rooms:reset', venueId),
   },
   agent: {
-    chat: (messages) => ipcRenderer.invoke('agent:chat', messages),
+    chat: (messages, systemPrompt) => ipcRenderer.invoke('agent:chat', messages, systemPrompt),
     selectImage: () => ipcRenderer.invoke('agent:selectImage'),
   },
 })
