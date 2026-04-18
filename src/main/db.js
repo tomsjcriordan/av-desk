@@ -8,6 +8,16 @@ import { join } from 'path'
 export function initDb(db) {
   db.pragma('journal_mode = WAL')
   db.exec(`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_number TEXT    NOT NULL UNIQUE,
+      date           TEXT    NOT NULL,
+      client         TEXT    NOT NULL DEFAULT '',
+      status         TEXT    NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','sent','paid')),
+      items          TEXT    NOT NULL DEFAULT '[]',
+      notes          TEXT    DEFAULT '',
+      created_at     TEXT    DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS expenses (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       date        TEXT    NOT NULL,
@@ -88,4 +98,43 @@ export function upsertClient(db, { name, contact, email, notes }) {
 
 export function deleteClient(db, id) {
   db.prepare('DELETE FROM clients WHERE id = ?').run(id)
+}
+
+// ── Invoices ─────────────────────────────────────────────────────────────────
+
+function parseInvoice(inv) {
+  return { ...inv, items: JSON.parse(inv.items || '[]') }
+}
+
+export function listInvoices(db) {
+  return db.prepare('SELECT * FROM invoices ORDER BY date DESC, id DESC').all().map(parseInvoice)
+}
+
+export function getInvoice(db, id) {
+  const inv = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id)
+  return inv ? parseInvoice(inv) : null
+}
+
+export function addInvoice(db, { invoice_number, date, client, status, items, notes }) {
+  const { lastInsertRowid } = db.prepare(
+    `INSERT INTO invoices (invoice_number, date, client, status, items, notes)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(invoice_number, date, client, status ?? 'draft', JSON.stringify(items ?? []), notes ?? '')
+  return getInvoice(db, lastInsertRowid)
+}
+
+export function updateInvoice(db, id, { date, client, status, items, notes }) {
+  db.prepare(
+    `UPDATE invoices SET date=?, client=?, status=?, items=?, notes=? WHERE id=?`
+  ).run(date, client, status, JSON.stringify(items ?? []), notes ?? '', id)
+  return getInvoice(db, id)
+}
+
+export function deleteInvoice(db, id) {
+  db.prepare('DELETE FROM invoices WHERE id = ?').run(id)
+}
+
+export function getNextInvoiceNumber(db) {
+  const { count } = db.prepare('SELECT COUNT(*) as count FROM invoices').get()
+  return `INV-${String(count + 1).padStart(3, '0')}`
 }
