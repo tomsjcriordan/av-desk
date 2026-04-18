@@ -35,9 +35,11 @@ describe('Sidebar', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
-  it('highlights the active nav item', () => {
+  it('highlights the active nav item and not inactive ones', () => {
     renderSidebar('/expenses')
     const activeItem = screen.getByText('Expenses').closest('a')
-    expect(activeItem.getAttribute('style')).toMatch(/background-color/)
+    const inactiveItem = screen.getByText('Invoices').closest('a')
+    expect(activeItem.getAttribute('style')).toContain('background-color: rgb(44, 44, 46)')
+    expect(inactiveItem.getAttribute('style')).not.toContain('background-color: rgb(44, 44, 46)')
   })
 })

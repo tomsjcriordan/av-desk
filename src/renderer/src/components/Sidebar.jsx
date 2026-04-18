@@ -78,21 +78,8 @@ export default function Sidebar() {
       </nav>
 
       {/* Settings */}
-      <div style={{ padding: '12px 16px', borderTop: `1px solid ${colors.borderLight}` }}>
-        <NavLink
-          to="/settings"
-          style={({ isActive }) => ({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '12px',
-            textDecoration: 'none',
-            color: isActive ? colors.text : colors.textSecondary,
-          })}
-        >
-          <span>⚙️</span>
-          <span>Settings</span>
-        </NavLink>
+      <div style={{ padding: '12px 8px', borderTop: `1px solid ${colors.borderLight}` }}>
+        <NavItem path="/settings" label="Settings" icon="⚙️" />
       </div>
     </div>
   )
