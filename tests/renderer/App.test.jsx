@@ -7,6 +7,7 @@ beforeEach(() => {
     settings: { getAll: vi.fn().mockResolvedValue({}) },
     expenses: { list: vi.fn().mockResolvedValue([]) },
     clients: { list: vi.fn().mockResolvedValue([]) },
+    invoices: { list: vi.fn().mockResolvedValue([]), nextNumber: vi.fn().mockResolvedValue('INV-001') },
   }
 })
 

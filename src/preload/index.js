@@ -17,4 +17,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     upsert: (data) => ipcRenderer.invoke('clients:upsert', data),
     delete: (id) => ipcRenderer.invoke('clients:delete', id),
   },
+  invoices: {
+    list: () => ipcRenderer.invoke('invoices:list'),
+    nextNumber: () => ipcRenderer.invoke('invoices:nextNumber'),
+    add: (data) => ipcRenderer.invoke('invoices:add', data),
+    update: (id, data) => ipcRenderer.invoke('invoices:update', id, data),
+    delete: (id) => ipcRenderer.invoke('invoices:delete', id),
+  },
 })
