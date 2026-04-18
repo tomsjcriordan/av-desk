@@ -11,6 +11,9 @@ beforeEach(() => {
     agent: { chat: vi.fn().mockResolvedValue({ text: '' }), selectImage: vi.fn().mockResolvedValue(null) },
     venues: { list: vi.fn().mockResolvedValue([]) },
     rooms: { list: vi.fn().mockResolvedValue([]) },
+    posts: { list: vi.fn().mockResolvedValue([]), add: vi.fn().mockResolvedValue({ id: 1 }), stats: vi.fn().mockResolvedValue({ totalPosts: 0, avgViews: 0, topPosts: [], byType: {} }) },
+    suggestions: { list: vi.fn().mockResolvedValue([]), add: vi.fn().mockResolvedValue({ id: 1 }) },
+    content: { buildPrompt: vi.fn().mockResolvedValue('') },
   }
 })
 
