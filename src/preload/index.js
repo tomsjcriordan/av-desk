@@ -24,4 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (id, data) => ipcRenderer.invoke('invoices:update', id, data),
     delete: (id) => ipcRenderer.invoke('invoices:delete', id),
   },
+  agent: {
+    chat: (messages) => ipcRenderer.invoke('agent:chat', messages),
+    selectImage: () => ipcRenderer.invoke('agent:selectImage'),
+  },
 })

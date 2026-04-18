@@ -7,6 +7,7 @@ import {
   listClients, upsertClient, deleteClient,
   listInvoices, getNextInvoiceNumber, addInvoice, updateInvoice, deleteInvoice,
 } from './db'
+import { handleAgentChat, handleAgentSelectImage } from './agentHandlers'
 
 const store = new Store()
 
@@ -45,6 +46,10 @@ ipcMain.handle('invoices:nextNumber', () => getNextInvoiceNumber(getDb(app.getPa
 ipcMain.handle('invoices:add', (_e, data) => addInvoice(getDb(app.getPath.bind(app)), data))
 ipcMain.handle('invoices:update', (_e, id, data) => updateInvoice(getDb(app.getPath.bind(app)), id, data))
 ipcMain.handle('invoices:delete', (_e, id) => deleteInvoice(getDb(app.getPath.bind(app)), id))
+
+// IPC: AV Agent
+ipcMain.handle('agent:chat', (_e, messages) => handleAgentChat(messages))
+ipcMain.handle('agent:selectImage', () => handleAgentSelectImage())
 
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
