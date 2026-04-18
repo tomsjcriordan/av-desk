@@ -52,6 +52,33 @@ export function initDb(db) {
       status     TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','delivered')),
       created_at TEXT    DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS content_suggestions (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      account    TEXT    NOT NULL,
+      workflow   TEXT    NOT NULL CHECK(workflow IN ('calendar','caption','analyze','monetize','chat')),
+      content    TEXT    NOT NULL,
+      status     TEXT    NOT NULL DEFAULT 'suggested' CHECK(status IN ('suggested','posted','skipped')),
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS content_posts (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      account        TEXT    NOT NULL,
+      platform       TEXT    NOT NULL CHECK(platform IN ('instagram','facebook','tiktok')),
+      post_type      TEXT    NOT NULL CHECK(post_type IN ('reel','post','story','carousel')),
+      title          TEXT    NOT NULL DEFAULT '',
+      caption        TEXT    DEFAULT '',
+      posted_date    TEXT    NOT NULL,
+      views          INTEGER NOT NULL DEFAULT 0,
+      likes          INTEGER NOT NULL DEFAULT 0,
+      saves          INTEGER NOT NULL DEFAULT 0,
+      shares         INTEGER NOT NULL DEFAULT 0,
+      comments       INTEGER NOT NULL DEFAULT 0,
+      watch_time_sec REAL    DEFAULT 0,
+      revenue        REAL    DEFAULT 0,
+      suggestion_id  INTEGER DEFAULT NULL REFERENCES content_suggestions(id),
+      notes          TEXT    DEFAULT '',
+      created_at     TEXT    DEFAULT (datetime('now'))
+    );
   `)
   db.pragma('foreign_keys = ON')
 }
@@ -197,4 +224,70 @@ export function deleteRoom(db, id) {
 
 export function resetRooms(db, venueId) {
   db.prepare("UPDATE rooms SET status = 'pending' WHERE venue_id = ?").run(venueId)
+}
+
+// ── Content Suggestions ─────────────────────────────────────────────────────
+
+export function addSuggestion(db, { account, workflow, content }) {
+  const { lastInsertRowid } = db.prepare(
+    'INSERT INTO content_suggestions (account, workflow, content) VALUES (?, ?, ?)'
+  ).run(account, workflow, content)
+  return db.prepare('SELECT * FROM content_suggestions WHERE id = ?').get(lastInsertRowid)
+}
+
+export function listSuggestions(db, account, status) {
+  if (status) {
+    return db.prepare('SELECT * FROM content_suggestions WHERE account = ? AND status = ? ORDER BY id DESC').all(account, status)
+  }
+  return db.prepare('SELECT * FROM content_suggestions WHERE account = ? ORDER BY id DESC').all(account)
+}
+
+export function updateSuggestionStatus(db, id, status) {
+  db.prepare('UPDATE content_suggestions SET status = ? WHERE id = ?').run(status, id)
+  return db.prepare('SELECT * FROM content_suggestions WHERE id = ?').get(id)
+}
+
+// ── Content Posts ────────────────────────────────────────────────────────────
+
+export function addPost(db, { account, platform, post_type, title, caption, posted_date, views, likes, saves, shares, comments, watch_time_sec, revenue, suggestion_id, notes }) {
+  const { lastInsertRowid } = db.prepare(
+    `INSERT INTO content_posts (account, platform, post_type, title, caption, posted_date, views, likes, saves, shares, comments, watch_time_sec, revenue, suggestion_id, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(account, platform, post_type, title, caption ?? '', posted_date, views, likes, saves, shares, comments, watch_time_sec ?? 0, revenue ?? 0, suggestion_id ?? null, notes ?? '')
+  if (suggestion_id) {
+    db.prepare("UPDATE content_suggestions SET status = 'posted' WHERE id = ?").run(suggestion_id)
+  }
+  return db.prepare('SELECT * FROM content_posts WHERE id = ?').get(lastInsertRowid)
+}
+
+export function listPosts(db, account, limit = 50) {
+  return db.prepare('SELECT * FROM content_posts WHERE account = ? ORDER BY posted_date DESC, id DESC LIMIT ?').all(account, limit)
+}
+
+export function deletePost(db, id) {
+  db.prepare('DELETE FROM content_posts WHERE id = ?').run(id)
+}
+
+export function getPostStats(db, account) {
+  const posts = listPosts(db, account)
+  if (posts.length === 0) {
+    return { totalPosts: 0, avgViews: 0, topPosts: [], byType: {} }
+  }
+  const totalViews = posts.reduce((sum, p) => sum + p.views, 0)
+  const topPosts = [...posts].sort((a, b) => b.views - a.views).slice(0, 5)
+  const byType = {}
+  for (const p of posts) {
+    if (!byType[p.post_type]) byType[p.post_type] = { count: 0, totalViews: 0 }
+    byType[p.post_type].count++
+    byType[p.post_type].totalViews += p.views
+  }
+  for (const t of Object.keys(byType)) {
+    byType[t].avgViews = Math.round(byType[t].totalViews / byType[t].count)
+  }
+  return {
+    totalPosts: posts.length,
+    avgViews: Math.round(totalViews / posts.length),
+    topPosts,
+    byType,
+  }
 }
