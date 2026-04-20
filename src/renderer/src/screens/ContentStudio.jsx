@@ -67,8 +67,14 @@ export default function ContentStudio() {
     if (bottomRef.current?.scrollIntoView) bottomRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  const handleSend = async () => {
-    const text = input.trim()
+  const MODE_AUTO_PROMPTS = {
+    analyze: 'Analyze my post performance. What patterns do you see? What should I do more of and less of?',
+    calendar: 'Generate a 7-day content calendar for this week based on what\'s been working.',
+    caption: 'I need a caption. What topic should I write about based on my best performers?',
+    monetize: 'Review my account metrics and give me specific revenue actions I can take this week.',
+  }
+
+  const sendMessage = async (text, activeMode) => {
     if (!text || loading) return
 
     const userMsg = { role: 'user', text }
@@ -79,14 +85,23 @@ export default function ContentStudio() {
     setLoading(true)
 
     try {
-      const systemPrompt = await window.electronAPI.content.buildPrompt(account, mode)
+      const systemPrompt = await window.electronAPI.content.buildPrompt(account, activeMode)
       const result = await window.electronAPI.agent.chat(nextMessages, systemPrompt)
       setMessages((prev) => [...prev, { role: 'assistant', text: result.text }])
-      await window.electronAPI.suggestions.add({ account, workflow: mode, content: result.text })
+      await window.electronAPI.suggestions.add({ account, workflow: activeMode, content: result.text })
     } catch (err) {
       setError(err.message || 'Something went wrong')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSend = () => sendMessage(input.trim(), mode)
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode)
+    if (newMode !== 'chat' && MODE_AUTO_PROMPTS[newMode]) {
+      sendMessage(MODE_AUTO_PROMPTS[newMode], newMode)
     }
   }
 
@@ -125,7 +140,7 @@ export default function ContentStudio() {
     <ScreenShell title={meta.title} subtitle={meta.subtitle} headerRight={headerRight}>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)', minHeight: '400px' }}>
 
-        <ModeSelector active={mode} onChange={setMode} />
+        <ModeSelector active={mode} onChange={handleModeChange} />
 
         {showLogPost && (
           <LogPostForm
