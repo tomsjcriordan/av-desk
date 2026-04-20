@@ -124,6 +124,18 @@ it('shows loading state while waiting', async () => {
   await waitFor(() => expect(screen.queryByText(/thinking/i)).not.toBeInTheDocument())
 })
 
+it('keeps messages when switching modes', async () => {
+  renderWithRoute('folded-steel')
+  await waitFor(() => {})
+  const input = screen.getByPlaceholderText(/content idea/i)
+  fireEvent.change(input, { target: { value: 'Give me a reel idea' } })
+  fireEvent.click(screen.getByRole('button', { name: /send/i }))
+  await waitFor(() => expect(screen.getByText(/knife edge glinting/i)).toBeInTheDocument())
+  fireEvent.click(screen.getByText('Calendar'))
+  expect(screen.getByText('Give me a reel idea')).toBeInTheDocument()
+  expect(screen.getByText(/knife edge glinting/i)).toBeInTheDocument()
+})
+
 it('shows error when API fails', async () => {
   window.electronAPI.agent.chat = vi.fn().mockRejectedValue(new Error('No API key'))
   renderWithRoute('folded-steel')

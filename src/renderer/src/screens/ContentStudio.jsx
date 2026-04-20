@@ -39,15 +39,13 @@ export default function ContentStudio() {
   const meta = ACCOUNT_META[account] || { title: 'Content Studio', subtitle: '' }
 
   const [mode, setMode] = useState('chat')
-  const [messages, setMessages] = useState({})
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showLogPost, setShowLogPost] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const bottomRef = useRef(null)
-
-  const modeMessages = messages[mode] || []
 
   const loadSuggestions = useCallback(async () => {
     if (!account) return
@@ -56,7 +54,7 @@ export default function ContentStudio() {
   }, [account])
 
   useEffect(() => {
-    setMessages({})
+    setMessages([])
     setInput('')
     setError(null)
     setLoading(false)
@@ -67,23 +65,23 @@ export default function ContentStudio() {
 
   useEffect(() => {
     if (bottomRef.current?.scrollIntoView) bottomRef.current.scrollIntoView({ behavior: 'smooth' })
-  }, [modeMessages, loading])
+  }, [messages, loading])
 
   const handleSend = async () => {
     const text = input.trim()
     if (!text || loading) return
 
     const userMsg = { role: 'user', text }
-    const nextModeMessages = [...modeMessages, userMsg]
-    setMessages((prev) => ({ ...prev, [mode]: nextModeMessages }))
+    const nextMessages = [...messages, userMsg]
+    setMessages(nextMessages)
     setInput('')
     setError(null)
     setLoading(true)
 
     try {
       const systemPrompt = await window.electronAPI.content.buildPrompt(account, mode)
-      const result = await window.electronAPI.agent.chat(nextModeMessages, systemPrompt)
-      setMessages((prev) => ({ ...prev, [mode]: [...(prev[mode] || []), { role: 'assistant', text: result.text }] }))
+      const result = await window.electronAPI.agent.chat(nextMessages, systemPrompt)
+      setMessages((prev) => [...prev, { role: 'assistant', text: result.text }])
       await window.electronAPI.suggestions.add({ account, workflow: mode, content: result.text })
     } catch (err) {
       setError(err.message || 'Something went wrong')
@@ -138,7 +136,7 @@ export default function ContentStudio() {
         )}
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 16px' }}>
-          {modeMessages.length === 0 && !loading && (
+          {messages.length === 0 && !loading && (
             <div style={{ textAlign: 'center', marginTop: '60px', color: colors.textMuted }}>
               <p style={{ fontSize: '14px', margin: 0 }}>
                 {mode === 'chat' && 'Ask for content ideas, strategies, or feedback.'}
@@ -149,7 +147,7 @@ export default function ContentStudio() {
               </p>
             </div>
           )}
-          {modeMessages.map((msg, i) =>
+          {messages.map((msg, i) =>
             msg.role === 'user'
               ? <UserBubble key={i} text={msg.text} />
               : <AssistantBubble key={i} text={msg.text} />
